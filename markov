@@ -1,0 +1,51 @@
+# markov_orden2_streamlit.py
+import streamlit as st
+from collections import defaultdict, Counter
+
+st.title("🔢 Modelo de Markov de Orden 2")
+
+st.markdown("""
+Ingresa una secuencia de números y obtén las **probabilidades de transición** y la **predicción del siguiente valor**  
+según un **modelo de Markov de orden 2**.
+""")
+
+# Entrada de secuencia
+seq_input = st.text_area("✏️ Ingresa la secuencia (números separados por comas):", "2,2,1,2,1,2,1,2,2,2,1,1,2,1,1,2,2,1,2,1")
+
+# Convertir secuencia a lista de enteros
+try:
+    data = [int(x.strip()) for x in seq_input.split(",") if x.strip() != ""]
+except ValueError:
+    st.error("⚠️ Asegúrate de ingresar solo números separados por comas.")
+    st.stop()
+
+if len(data) < 3:
+    st.warning("⚠️ La secuencia debe tener al menos 3 números.")
+    st.stop()
+
+# Crear diccionario de transiciones de orden 2
+transitions = defaultdict(list)
+for i in range(len(data) - 2):
+    prev = (data[i], data[i+1])
+    next_state = data[i+2]
+    transitions[prev].append(next_state)
+
+# Calcular probabilidades
+model = {k: Counter(v) for k, v in transitions.items()}
+
+st.subheader("📊 Transiciones y probabilidades:")
+output = ""
+for k, counts in model.items():
+    total = sum(counts.values())
+    probs = {state: round(c/total, 2) for state, c in counts.items()}
+    output += f"{k} → {probs}\n"
+st.text(output)
+
+# Predicción
+last_two = (data[-2], data[-1])
+st.subheader("🔮 Predicción del siguiente valor:")
+if last_two in model:
+    prediction = max(model[last_two], key=model[last_two].get)
+    st.success(f"Siguiente predicción después de {last_two}: {prediction}")
+else:
+    st.error(f"No hay información suficiente para el par {last_two}.")
